@@ -5,6 +5,7 @@ public class Collatz {
 
     /** Buggy implementation of nextNumber! */
     public static int nextNumber(int n) {
+<<<<<<< Updated upstream
         if (n  == 128) {
             return 1;
         } else if (n == 5) {
@@ -12,6 +13,9 @@ public class Collatz {
         } else {
             return n * 2;
         }
+=======
+        return n%2==0? n/2 : 3*n+1 ;
+>>>>>>> Stashed changes
     }
 
     public static void main(String[] args) {
