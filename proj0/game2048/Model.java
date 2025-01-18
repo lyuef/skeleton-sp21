@@ -106,6 +106,90 @@ public class Model extends Observable {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      * */
+    private boolean change_col_up(int c) {
+        int lst = this.board.size();
+        boolean changed = false;
+        for(int r=this.board.size()-1;r>-1;r--) {
+            if(this.board.tile(c,r) == null) continue;
+            if(lst > -1 && lst < this.board.size() && this.board.tile(c,lst)!=null &&this.board.tile(c,lst).value() == this.board.tile(c,r).value()) {
+                this.score += 2*this.board.tile(c,r).value();
+                this.board.move(c,lst,this.board.tile(c,r));
+                lst -- ;
+                changed = true;
+            } else if(lst>-1 && lst < this.board.size() && this.board.tile(c,lst) == null){
+                this.board.move(c,lst,this.board.tile(c,r));
+                changed = true;
+            } else {
+                changed |= (lst-1>r);
+                this.board.move(c,lst-1,this.board.tile(c,r));
+                lst -- ;
+            }
+        }
+        return changed ;
+    }
+    private boolean change_col_down(int c) {
+        int lst = -1;
+        boolean changed = false;
+        for(int r=0;r<this.board.size();r++) {
+            if(this.board.tile(c,r) == null) continue;
+            if(lst > -1 && lst < this.board.size() && this.board.tile(c,lst)!=null &&this.board.tile(c,lst).value() == this.board.tile(c,r).value()) {
+                this.score += 2*this.board.tile(c,r).value();
+                this.board.move(c,lst,this.board.tile(c,r));
+                lst ++ ;
+                changed = true;
+            } else if(lst>-1 && lst < this.board.size() && this.board.tile(c,lst) == null){
+                this.board.move(c,lst,this.board.tile(c,r));
+                changed = true;
+            } else {
+                changed |= (lst+1<r);
+                this.board.move(c,lst+1,this.board.tile(c,r));
+                lst ++ ;
+            }
+        }
+        return changed ;
+    }
+    private boolean change_row_left(int r) {
+        int lst = -1;
+        boolean changed = false;
+        for(int c=0;c<this.board.size();c++) {
+            if(this.board.tile(c,r) == null) continue;
+            if(lst > -1 && lst < this.board.size() && this.board.tile(lst,r)!=null &&this.board.tile(lst,r).value() == this.board.tile(c,r).value()) {
+                this.score += 2*this.board.tile(c,r).value();
+                this.board.move(lst,r,this.board.tile(c,r));
+                lst ++ ;
+                changed = true;
+            } else if(lst>-1 && lst < this.board.size() && this.board.tile(lst,r) == null){
+                this.board.move(lst,r,this.board.tile(c,r));
+                changed = true;
+            } else {
+                changed |= (lst + 1 < c );
+                this.board.move(lst+1,r,this.board.tile(c,r));
+                lst ++ ;
+            }
+        }
+        return changed ;
+    }
+    private boolean change_row_right(int r) {
+        int lst = this.board.size();
+        boolean changed = false;
+        for(int c=this.board.size()-1;c>-1;c--) {
+            if(this.board.tile(c,r) == null) continue;
+            if(lst > -1 && lst <this.board.size() && this.board.tile(lst,r)!=null &&this.board.tile(lst,r).value() == this.board.tile(c,r).value()) {
+                this.score += 2*this.board.tile(c,r).value();
+                this.board.move(lst,r,this.board.tile(c,r));
+                lst -- ;
+                changed = true;
+            } else if(lst>-1 && lst < this.board.size() && this.board.tile(lst,r) == null){
+                this.board.move(lst,r,this.board.tile(c,r));
+                changed = true;
+            } else {
+                changed |= (lst - 1 > c );
+                this.board.move(lst-1,r,this.board.tile(c,r));
+                lst -- ;
+            }
+        }
+        return changed ;
+    }
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
@@ -113,7 +197,26 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-
+        if(side == Side.NORTH) {
+            for(int i=0;i<this.board.size();i++) {
+                changed |= change_col_up(i);
+            }
+        }
+        if(side == Side.SOUTH) {
+            for(int i=0;i<this.board.size();i++) {
+                changed |= change_col_down(i);
+            }
+        }
+        if(side == Side.WEST) {
+            for(int i=0;i<this.board.size();i++) {
+                changed |=change_row_left(i);
+            }
+        }
+        if(side == Side.EAST) {
+            for(int i=0;i<this.board.size();i++) {
+                changed |= change_row_right(i);
+            }
+        }
         checkGameOver();
         if (changed) {
             setChanged();
@@ -138,6 +241,11 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for(int i=0;i<b.size();i++) {
+            for(int j=0;j<b.size();j++) {
+                if(b.tile(i,j)==null) return true;
+            }
+        }
         return false;
     }
 
@@ -148,6 +256,13 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for(int i=0;i<b.size();i+=1) {
+            for(int j=0;j<b.size();j+=1) {
+                if(b.tile(i,j) == null) continue;
+                if( b.tile(i,j).value() == MAX_PIECE )
+                    return true;
+            }
+        }
         return false;
     }
 
@@ -159,6 +274,27 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        int [][] d = {
+                {-1,0},
+                {1,0},
+                {0,1},
+                {0,-1}
+        };
+        for(int i=0;i<b.size();i++) {
+            for(int j=0;j<b.size();j++) {
+                if(b.tile(i,j)==null) return true;
+                else for(int k=0;k<4;k++) {
+                    if(i+d[k][0]>=0 && i+d[k][0]<b.size() && j+d[k][1]>=0 && j+d[k][1]<b.size() && b.tile(i+d[k][0],j+d[k][1])!=null) {
+                        if(b.tile(i,j).value() == b.tile(i+d[k][0],j+d[k][1]).value()) return true;
+                    }
+                }
+            }
+        }
+        for(int i=0;i<b.size();i++) {
+            for(int j=0;j<b.size();j++) {
+
+            }
+        }
         return false;
     }
 
