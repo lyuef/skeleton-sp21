@@ -13,7 +13,7 @@ public class GuitarHeroLite {
         /* create two guitar strings, for concert A and C */
         GuitarString stringA = new GuitarString(CONCERT_A);
         GuitarString stringC = new GuitarString(CONCERT_C);
-
+        //StdAudio.play(10000);
         while (true) {
 
             /* check if the user has typed a key; if so, process it */
