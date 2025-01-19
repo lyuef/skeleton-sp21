@@ -33,7 +33,7 @@ public class TimeSLList {
             }
             ops.addLast(10000);
             SLList<Integer>test_sllist = new SLList<Integer>();
-            for(int j=0;j<ns.size();j++) {
+            for(int j=0;j<ns.getLast();j++) {
                 test_sllist.addFirst(1);
             }
             Stopwatch sw = new Stopwatch();
