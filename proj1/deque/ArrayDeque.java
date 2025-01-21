@@ -51,7 +51,7 @@ public class ArrayDeque<T> implements Iterable<T> ,Deque<T> {
     @Override
     public T removeFirst() {
         if(isEmpty()) return null;
-        if(size < a.length/4 && size > 32) {
+        if(size < a.length/2 && size > 8) {
             resize(size);
         }
         front = (front + 1)%a.length;
@@ -61,7 +61,7 @@ public class ArrayDeque<T> implements Iterable<T> ,Deque<T> {
     @Override
     public T removeLast() {
         if(isEmpty()) return null;
-        if(size<a.length/4 && size > 8) {
+        if(size<a.length/2 && size > 8) {
             resize(size);
         }
         back = (back - 1 + a.length)%a.length;
