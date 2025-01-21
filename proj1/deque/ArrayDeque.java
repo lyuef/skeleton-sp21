@@ -16,8 +16,8 @@ public class ArrayDeque<T> implements Iterable<T> ,Deque<T> {
             tmp[i] = a[(front+i+1)%a.length];
         }
         a = tmp;
-        front = need-1;
-        back = size;
+        front = (need-1+a.length)%a.length;
+        back = size%a.length;
     }
     @Override
     public void addFirst(T item) {
@@ -26,7 +26,7 @@ public class ArrayDeque<T> implements Iterable<T> ,Deque<T> {
         }
         size+=1;
         a[front] = item;
-        front = (front - 1+a.length)%a.length;
+        front = (front - 1 + a.length)%a.length;
     }
     @Override
     public void addLast(T item) {
