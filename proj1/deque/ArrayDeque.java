@@ -61,7 +61,7 @@ public class ArrayDeque<T> implements Iterable<T> ,Deque<T> {
     @Override
     public T removeLast() {
         if(isEmpty()) return null;
-        if(size<a.length/4 && size > 32) {
+        if(size<a.length/4 && size > 8) {
             resize(size);
         }
         back = (back - 1 + a.length)%a.length;
@@ -94,10 +94,10 @@ public class ArrayDeque<T> implements Iterable<T> ,Deque<T> {
         }
     }
     public boolean equals(Object o) {
-        if(!(o instanceof ArrayDeque)) return false;
-        if(((ArrayDeque<?>)o).size()!=size) return false;
+        if(!(o instanceof Deque)) return false;
+        if(((Deque<?>)o).size()!=size) return false;
         for(int i=0;i<size();i++) {
-            if( !get(i).equals(((ArrayDeque<?>)o).get(i) ) ) return false;
+            if( !get(i).equals(((Deque<?>)o).get(i) ) ) return false;
         }
         return true;
     }

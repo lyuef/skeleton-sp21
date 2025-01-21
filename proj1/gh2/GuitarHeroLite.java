@@ -1,6 +1,9 @@
 package gh2;
+import deque.MaxArrayDeque;
 import edu.princeton.cs.algs4.StdAudio;
 import edu.princeton.cs.algs4.StdDraw;
+
+import java.util.Comparator;
 
 /**
  * A client that uses the synthesizer package to replicate a plucked guitar string sound
@@ -25,7 +28,12 @@ public class GuitarHeroLite {
                     stringC.pluck();
                 }
             }
-
+            Comparator<Double> d = new Comparator<Double>() {
+                @Override
+                public int compare(Double o1, Double o2) {
+                    return 0;
+                }
+            };
             /* compute the superposition of samples */
             double sample = stringA.sample() + stringC.sample();
 
@@ -36,6 +44,7 @@ public class GuitarHeroLite {
             stringA.tic();
             stringC.tic();
         }
+
     }
 }
 

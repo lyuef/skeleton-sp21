@@ -1,6 +1,9 @@
 package deque;
 
 import org.junit.Test;
+
+import java.util.Comparator;
+
 import static org.junit.Assert.*;
 
 
@@ -103,7 +106,6 @@ public class ArrayDequeTest {
     public void emptyNullReturnTest() {
 
         System.out.println("Make sure to uncomment the lines below (and delete this print statement).");
-
         ArrayDeque<Integer> lld1 = new ArrayDeque<Integer>();
 
         boolean passed1 = false;
