@@ -3,6 +3,8 @@ package capers;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
 
 import static capers.Utils.*;
 
@@ -58,6 +60,10 @@ public class CapersRepository {
             fw.write(text);
             fw.write(System.lineSeparator());
         }
+        List<String> lines = Files.readAllLines(STORY_FILE.toPath());
+        for (String line : lines) {
+            System.out.println(line);
+        }
     }
 
     /**
@@ -69,6 +75,7 @@ public class CapersRepository {
         // TODO
         Dog now = new Dog(name,breed,age);
         now.saveDog();
+        System.out.println(now);
     }
 
     /**
