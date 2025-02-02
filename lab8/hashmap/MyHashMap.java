@@ -1,6 +1,6 @@
 package hashmap;
 
-import java.util.Collection;
+import java.util.*;
 
 /**
  *  A hash table-backed Map implementation. Provides amortized constant time
@@ -11,6 +11,85 @@ import java.util.Collection;
  */
 public class MyHashMap<K, V> implements Map61B<K, V> {
 
+    private int getindex(K key) {
+        return ( key.hashCode()%tablesize + tablesize )%tablesize ;
+    }
+    @Override
+    public void clear() {
+        size = 0;
+        keys.clear();
+        tablesize = 16;
+        buckets = createTable(tablesize);
+    }
+
+    @Override
+    public boolean containsKey(K key) {
+        return keys.contains(key);
+    }
+
+    @Override
+    public V get(K key) {
+        int whi = getindex(key);
+        for(Node node:buckets[whi]) {
+            if(node.key.equals(key)) return node.value;
+        }
+        return null;
+    }
+
+    @Override
+    public int size() {
+        return size;
+    }
+
+    @Override
+    public void put(K key, V value) {
+        keys.add(key);
+        size += 1;
+        int whi = getindex(key);
+        for(Node node:buckets[whi]) {
+            if(node.key == key) {
+                node.value = value;
+                size -= 1;
+                return ;
+            }
+        }
+        buckets[whi].add(createNode(key,value));
+        if((double)size/tablesize > max_load) {
+            resize();
+        }
+    }
+
+    @Override
+    public Set<K> keySet() {
+        return new HashSet<>(keys);
+    }
+
+    @Override
+    public V remove(K key) {
+        throw new UnsupportedOperationException("no support");
+    }
+
+    @Override
+    public V remove(K key, V value) {
+        throw new UnsupportedOperationException("no support");
+    }
+
+    @Override
+    public Iterator<K> iterator() {
+        return keys.iterator();
+    }
+    protected void resize() {
+        Collection<Node>[] tmp = createTable(tablesize*2);
+        int bef = tablesize;
+        tablesize *= 2;
+        for(int i=0;i<bef;i++) {
+            for(Node node:buckets[i]) {
+                int whi = getindex(node.key);
+                tmp[whi].add(node);
+            }
+        }
+        buckets = tmp;
+    }
     /**
      * Protected helper class to store key/value pairs
      * The protected qualifier allows subclass access
@@ -28,11 +107,19 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     /* Instance Variables */
     private Collection<Node>[] buckets;
     // You should probably define some more!
-
+    private int tablesize = 16 ;
+    private int size = 0;
+    private double max_load = 0.75 ;
+    private Set<K>keys = new HashSet<>();
     /** Constructors */
-    public MyHashMap() { }
+    public MyHashMap() {
+        buckets = createTable(tablesize);
+    }
 
-    public MyHashMap(int initialSize) { }
+    public MyHashMap(int initialSize) {
+        tablesize = initialSize ;
+        buckets = createTable(tablesize);
+    }
 
     /**
      * MyHashMap constructor that creates a backing array of initialSize.
@@ -41,13 +128,17 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * @param initialSize initial size of backing array
      * @param maxLoad maximum load factor
      */
-    public MyHashMap(int initialSize, double maxLoad) { }
+    public MyHashMap(int initialSize, double maxLoad) {
+        tablesize = initialSize ;
+        max_load = maxLoad ;
+        buckets = createTable(tablesize);
+    }
 
     /**
      * Returns a new node to be placed in a hash table bucket
      */
     private Node createNode(K key, V value) {
-        return null;
+        return new Node(key,value);
     }
 
     /**
@@ -69,20 +160,24 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * OWN BUCKET DATA STRUCTURES WITH THE NEW OPERATOR!
      */
     protected Collection<Node> createBucket() {
-        return null;
+        return new ArrayList<>();
     }
 
     /**
      * Returns a table to back our hash table. As per the comment
      * above, this table can be an array of Collection objects
-     *
+     * <p>
      * BE SURE TO CALL THIS FACTORY METHOD WHEN CREATING A TABLE SO
      * THAT ALL BUCKET TYPES ARE OF JAVA.UTIL.COLLECTION
      *
      * @param tableSize the size of the table to create
      */
     private Collection<Node>[] createTable(int tableSize) {
-        return null;
+        Collection<Node>[] table = new Collection[tableSize];
+        for (int i = 0; i < tableSize; i++) {
+            table[i] = createBucket();
+        }
+        return table;
     }
 
     // TODO: Implement the methods of the Map61B Interface below
