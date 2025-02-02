@@ -3,8 +3,8 @@ package bstmap;
 import java.util.Iterator;
 import java.util.Set;
 
-public class BSTMap<K extends Comparable,V> implements Map61B<K,V> {
-    private class BSTNode<K extends Comparable,V> {
+public class BSTMap<K extends Comparable<K>,V> implements Map61B<K,V> {
+    private class BSTNode<K extends Comparable<K>,V> {
         public K key;
         public V val;
         public BSTNode<K,V> lson = null;
@@ -19,7 +19,7 @@ public class BSTMap<K extends Comparable,V> implements Map61B<K,V> {
         }
     }
     private BSTNode<K,V> root = null;
-    int size = 0;
+    private int size = 0;
     @Override
     public void clear() {
         root = null ;
@@ -31,7 +31,7 @@ public class BSTMap<K extends Comparable,V> implements Map61B<K,V> {
         class helper {
             public boolean cKhelper(K key,BSTNode now) {
                 if(now.key.compareTo(key) == 0) return true;
-                if(key.compareTo(now.key) < 0) return cKhelper(key,now.lson);
+                if(key.compareTo((K) now.key) < 0) return cKhelper(key,now.lson);
                 else return cKhelper(key,now.rson);
             }
         }
@@ -44,7 +44,7 @@ public class BSTMap<K extends Comparable,V> implements Map61B<K,V> {
         class helper {
             public V gethelper(K key,BSTNode now) {
                 if(now.key.compareTo(key) == 0 ) return (V)now.val;
-                if(key.compareTo(now.key) < 0 ) return (V)gethelper(key,now.lson);
+                if(key.compareTo((K) now.key) < 0 ) return (V)gethelper(key,now.lson);
                 else return (V)gethelper(key,now.rson);
             }
         }
@@ -59,11 +59,11 @@ public class BSTMap<K extends Comparable,V> implements Map61B<K,V> {
     public void put(K key, V value) {
         class helper {
             public void puthelper(K key,V value,BSTNode now) {
-                if(key.compareTo(now.key) == 0) {
+                if(key.compareTo((K) now.key) == 0) {
                     now.val = value;
                     return ;
                 }
-                if(key.compareTo(now.key)<0) {
+                if(key.compareTo((K) now.key)<0) {
                     if(now.lson == null) {
                         now.lson = new BSTNode<K,V>(key,value);
                         size+=1;
