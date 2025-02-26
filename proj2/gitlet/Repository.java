@@ -1,12 +1,10 @@
 package gitlet;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 
 import static gitlet.Utils.*;
 
@@ -42,6 +40,27 @@ public class Repository {
     static Map<String,String>tracked = new HashMap<>();
     static Map<String,String>removed = new HashMap<>();
     /* TODO: fill in the rest of this class. */
+    private static void writeall() {
+        writeObject(Branches_FILE, (Serializable) branches);
+        writeObject(HEAD_FILE,HEAD);
+        writeObject(Tracked_FILE,(Serializable) tracked);
+        writeObject(Removed_FILE,(Serializable) removed);
+    }
+    private static void readall() {
+        tracked = readObject(Tracked_FILE,HashMap.class);
+        removed = readObject(Removed_FILE,HashMap.class);
+        HEAD = readObject(HEAD_FILE,String.class);
+        branches = readObject(Branches_FILE,HashMap.class);
+    }
+    private static File newCommitFile(String name) {
+        File COMMIT_FILE = join(COMMITS_DIR,name);
+        try {
+            COMMIT_FILE.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return COMMIT_FILE;
+    }
     public static boolean init() {
         if(GITLET_DIR.exists()) return false;
         GITLET_DIR.mkdir();
@@ -58,17 +77,8 @@ public class Repository {
         HEAD = "MASTER";
         Commit fir_commit = new Commit("initial commit", time(0),new HashMap<>(),"");
         branches.put(HEAD,fir_commit.getHash());
-        writeObject(Branches_FILE, (Serializable) branches);
-        writeObject(HEAD_FILE,HEAD);
-        writeObject(Tracked_FILE,(Serializable) tracked);
-        writeObject(Removed_FILE,(Serializable) removed);
-        File FIR_COMMIT_FILE = join(COMMITS_DIR,fir_commit.getHash());
-        try {
-            FIR_COMMIT_FILE.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        writeObject(FIR_COMMIT_FILE,fir_commit);
+        writeall();
+        writeObject(newCommitFile(fir_commit.getHash()),fir_commit);
         return true;
     }
     public static boolean exists() {
@@ -76,8 +86,7 @@ public class Repository {
     }
     public static Commit commit(String message,String timestamp,String lst) {
         //core part is handle the addstage and removestage
-        tracked = readObject(Tracked_FILE,HashMap.class);
-        removed = readObject(Removed_FILE,HashMap.class);
+        readall();
         for(String key : tracked.keySet()) {
             if(removed.containsKey(key)) {
                 tracked.remove(key);
@@ -99,8 +108,7 @@ public class Repository {
         }
         removed.clear();
         tracked.clear();
-        writeObject(Tracked_FILE,(Serializable) tracked);
-        writeObject(Removed_FILE,(Serializable) removed);
+        writeall();
         return new Commit(message,timestamp,res,lst);
     }
     public static boolean add (String file_to_add) {
@@ -113,43 +121,27 @@ public class Repository {
     }
     public static boolean make_commit(String messege) {
         //core : handle the logic of nothing changed and moved the HEAD point
-        tracked = readObject(Tracked_FILE,HashMap.class);
-        removed = readObject(Removed_FILE,HashMap.class);
+        readall();
         if(tracked.isEmpty()  && removed.isEmpty()) return false;
-        writeObject(Tracked_FILE,(Serializable) tracked);
-        writeObject(Removed_FILE,(Serializable) removed);
         //move HEAD pointer
-        HEAD = readObject(HEAD_FILE,String.class);
-        branches = readObject(Branches_FILE,HashMap.class);
-        Commit now = commit(messege,time(1),branches.get(HEAD));
+        String lst = new String(branches.get(HEAD));
+        writeall();
+        Commit now = commit(messege,time(1),lst);
+        readall();
         branches.put(HEAD , now.getHash() ) ;
-        writeObject(HEAD_FILE,HEAD);
-        writeObject(Branches_FILE,(Serializable) branches);
-        File NOW_FILE = null;
-        try {
-            NOW_FILE = join(COMMITS_DIR,now.getHash());
-            NOW_FILE.createNewFile();
-        }catch (IOException e) {
-            e.printStackTrace();
-        }
-        writeObject(NOW_FILE,now);
+        writeall();
         return true;
     }
     public static boolean rm (String file_to_remove) {
         //core : check if the file has been removed
-        tracked = readObject(Tracked_FILE,HashMap.class);
-        removed = readObject(Removed_FILE,HashMap.class);
-        HEAD = readObject(HEAD_FILE,String.class);
-        branches = readObject(Branches_FILE,HashMap.class);
+        readall();
+        // get last commit
         File Lst_commit_file = join(COMMITS_DIR,branches.get(HEAD));
         Commit lst_commit = readObject(Lst_commit_file,Commit.class);
         if(removed.containsKey(file_to_remove)) return false;
         else if(!tracked.containsKey(file_to_remove) || !lst_commit.getFiles().containsKey(file_to_remove)) return false;
         removed.put(file_to_remove,"");
-        writeObject(Tracked_FILE,(Serializable) tracked);
-        writeObject(Removed_FILE,(Serializable) removed);
-        writeObject(HEAD_FILE,HEAD);
-        writeObject(Branches_FILE,(Serializable) branches);
+        writeall();
         return true;
     }
 }
