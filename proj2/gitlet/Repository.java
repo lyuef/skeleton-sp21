@@ -1,11 +1,10 @@
 package gitlet;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.*;
-import java.util.Currency;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
+import java.util.List;
 
 import static gitlet.Utils.*;
 
@@ -149,18 +148,66 @@ public class Repository {
         if(removed.containsKey(file_to_remove)) return false;
         else if(!tracked.containsKey(file_to_remove) || !lst_commit.getFiles().containsKey(file_to_remove)) return false;
         removed.put(file_to_remove,"");
+        restrictedDelete(file_to_remove);
         writeall();
         return true;
     }
     public static void log() {
+        // jump to root commit
         readall();
         Commit now = current_Commit(branches.get(HEAD));
         while(now!=null) {
-            System.out.println("===");
-            System.out.println("Date: " + now.getTimestamp());
-            System.out.println(now.getMessage());
+            now.printMessege();
             now = get_lst_Commit(now);
         }
+        writeall();
+    }
+    public static void global_log () {
+        List<String> all_commit_file = plainFilenamesIn(COMMITS_DIR);
+        for(String commit_file : all_commit_file) {
+            Commit now = current_Commit(commit_file);
+            now.printMessege();
+        }
+    }
+    public static boolean find(String message) {
+        boolean flag = false;
+        List<String> all_commit_file = plainFilenamesIn(COMMITS_DIR);
+        for(String commit_file : all_commit_file) {
+            Commit now = current_Commit(commit_file);
+            if(now.getMessage() == message) {
+                System.out.println(now.getHash());
+                flag = true;
+            }
+        }
+        return flag;
+    }
+    public static void status () {
+        readall();
+        //  branches
+        System.out.println("=== Braches ===");
+        for(String key : branches.keySet()) {
+            if(key == HEAD) {
+                System.out.println("*"+HEAD);
+            }else {
+                System.out.println(key);
+            }
+        }
+        System.out.println();
+        // staged files
+        System.out.println("=== Staged Files ===");
+        for(String key : tracked.keySet()) {
+            if(!removed.containsKey(key)) {
+                System.out.println(key);
+            }
+        }
+        System.out.println();
+        // removed files
+        System.out.println("=== Removed Files ===");
+        for(String key : removed.keySet()) {
+            System.out.println(key);
+        }
+        System.out.println();
+        //
         writeall();
     }
 }

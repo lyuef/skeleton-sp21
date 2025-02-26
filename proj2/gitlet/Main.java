@@ -3,6 +3,8 @@ package gitlet;
 import jdk.jshell.execution.Util;
 
 import java.io.File;
+import java.net.URI;
+
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author TODO
  */
@@ -11,11 +13,18 @@ public class Main {
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
-    private static void check (int args_len,int need_len ) {
-        if(!Repository.exists()) {
+    private static void check(int args_len, int... need_len) {
+        if (!Repository.exists()) {
             throw Utils.error("Not in an initialized Gitlet directory.");
         }
-        if(args_len != need_len) {
+        boolean validLength = false;
+        for (int len : need_len) {
+            if (args_len == len) {
+                validLength = true;
+                break;
+            }
+        }
+        if (!validLength) {
             throw Utils.error("Incorrect operands.");
         }
     }
@@ -66,8 +75,24 @@ public class Main {
                     break;
                 case "log" :
                     check(args.length,1);
-                    
+                    Repository.log();
                     break;
+                case "global-log" :
+                    check((args.length),1);
+                    Repository.global_log();
+                    break;
+                case "find" :
+                    check(args.length,2);
+                    if(Repository.find(args[1])) {
+                        throw Utils.error("Found no commit with that message.");
+                    }
+                    break;
+                case "status" :
+                    check(args.length,1);
+                    Repository.status();
+                    break;
+                case "checkout" :
+                    
                 default:
                     throw new GitletException("No command with that name exists.");
             }

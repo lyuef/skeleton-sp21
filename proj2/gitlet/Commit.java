@@ -51,4 +51,11 @@ public class Commit implements Serializable {
     public String getlst() {
         return lst;
     }
+    public void printMessege() {
+        System.out.println("===");
+        //TODO : add merge info
+        System.out.println("commit " + getHash());
+        System.out.println("Date: " + getTimestamp());
+        System.out.println(getMessage());
+    }
 }
