@@ -1,5 +1,8 @@
 package gitlet;
 
+import jdk.jshell.execution.Util;
+
+import java.io.File;
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author TODO
  */
@@ -10,15 +13,63 @@ public class Main {
      */
     public static void main(String[] args) {
         // TODO: what if args is empty?
-        String firstArg = args[0];
-        switch(firstArg) {
-            case "init":
-                // TODO: handle the `init` command
-                break;
-            case "add":
-                // TODO: handle the `add [filename]` command
-                break;
-            // TODO: FILL THE REST IN
+        try {
+            if(args.length == 0) {
+                throw new GitletException("Please enter a command.");
+            }
+            String firstArg = args[0];
+            switch(firstArg) {
+                case "init":
+                    // TODO: handle the `init` command
+                    if(!Repository.init() ) {
+                        throw Utils.error("A Gitlet version-control system already exists in the current directory.");
+                    }
+                    if(args.length != 1) {
+                        throw Utils.error("Incorrect operands.");
+                    }
+                    break;
+                case "add":
+                    // TODO: handle the `add [filename]` command
+                    if(!Repository.exists()) {
+                        throw Utils.error("Not in an initialized Gitlet directory.");
+                    }
+                    if(args.length != 2) {
+                        throw Utils.error("Incorrect operands.");
+                    }
+                    if(!Repository.add(args[1])) {
+                        throw Utils.error("File does not exist.");
+                    }
+                    break;
+                // TODO: FILL THE REST IN
+                case "commit" :
+                    if(!Repository.exists()) {
+                        throw Utils.error("Not in an initialized Gitlet directory.");
+                    }
+                    if(args.length == 1) {
+                        throw Utils.error("Please enter a commit message.");
+                    }
+                    if(args.length > 2) {
+                        throw Utils.error("Incorrect operands.");
+                    }
+                    if(!Repository.make_commit(args[1])) {
+                        throw Utils.error("No changes added to the commit.");
+                    }
+                case "rm" :
+                    if(!Repository.exists()) {
+                        throw Utils.error("Not in an initialized Gitlet directory.");
+                    }
+                    if(args.length != 2) {
+                        throw Utils.error("Incorrect operands.");
+                    }
+                    if(!Repository.rm(args[1])) {
+                        throw Utils.error("No reason to remove the file.");
+                    }
+                default:
+                    throw new GitletException("No command with that name exists.");
+            }
+        } catch (GitletException e) {
+            System.out.println(e.getMessage());
+            System.exit(0);
         }
     }
 }
