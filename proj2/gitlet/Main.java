@@ -11,6 +11,14 @@ public class Main {
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
+    private static void check (int args_len,int need_len ) {
+        if(!Repository.exists()) {
+            throw Utils.error("Not in an initialized Gitlet directory.");
+        }
+        if(args_len != need_len) {
+            throw Utils.error("Incorrect operands.");
+        }
+    }
     public static void main(String[] args) {
         // TODO: what if args is empty?
         try {
@@ -30,12 +38,7 @@ public class Main {
                     break;
                 case "add":
                     // TODO: handle the `add [filename]` command
-                    if(!Repository.exists()) {
-                        throw Utils.error("Not in an initialized Gitlet directory.");
-                    }
-                    if(args.length != 2) {
-                        throw Utils.error("Incorrect operands.");
-                    }
+                    check(args.length,2);
                     if(!Repository.add(args[1])) {
                         throw Utils.error("File does not exist.");
                     }
@@ -54,16 +57,17 @@ public class Main {
                     if(!Repository.make_commit(args[1])) {
                         throw Utils.error("No changes added to the commit.");
                     }
+                    break;
                 case "rm" :
-                    if(!Repository.exists()) {
-                        throw Utils.error("Not in an initialized Gitlet directory.");
-                    }
-                    if(args.length != 2) {
-                        throw Utils.error("Incorrect operands.");
-                    }
+                    check(args.length,2);
                     if(!Repository.rm(args[1])) {
                         throw Utils.error("No reason to remove the file.");
                     }
+                    break;
+                case "log" :
+                    check(args.length,1);
+                    
+                    break;
                 default:
                     throw new GitletException("No command with that name exists.");
             }

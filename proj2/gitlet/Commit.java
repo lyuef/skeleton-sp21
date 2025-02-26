@@ -48,4 +48,7 @@ public class Commit implements Serializable {
     public Map<String,String> getFiles() {
         return files;
     }
+    public String getlst() {
+        return lst;
+    }
 }

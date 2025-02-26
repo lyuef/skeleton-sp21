@@ -2,6 +2,7 @@ package gitlet;
 
 import javax.swing.*;
 import java.io.*;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -60,6 +61,14 @@ public class Repository {
             e.printStackTrace();
         }
         return COMMIT_FILE;
+    }
+    private static Commit current_Commit(String id) {
+        File Lst_commit_file = join(COMMITS_DIR,id);
+        return readObject(Lst_commit_file,Commit.class);
+    }
+    private static Commit get_lst_Commit(Commit now) {
+        if(now.getlst() == "") return null;
+        return current_Commit(now.getlst());
     }
     public static boolean init() {
         if(GITLET_DIR.exists()) return false;
@@ -136,12 +145,22 @@ public class Repository {
         //core : check if the file has been removed
         readall();
         // get last commit
-        File Lst_commit_file = join(COMMITS_DIR,branches.get(HEAD));
-        Commit lst_commit = readObject(Lst_commit_file,Commit.class);
+        Commit lst_commit = current_Commit(branches.get(HEAD));
         if(removed.containsKey(file_to_remove)) return false;
         else if(!tracked.containsKey(file_to_remove) || !lst_commit.getFiles().containsKey(file_to_remove)) return false;
         removed.put(file_to_remove,"");
         writeall();
         return true;
+    }
+    public static void log() {
+        readall();
+        Commit now = current_Commit(branches.get(HEAD));
+        while(now!=null) {
+            System.out.println("===");
+            System.out.println("Date: " + now.getTimestamp());
+            System.out.println(now.getMessage());
+            now = get_lst_Commit(now);
+        }
+        writeall();
     }
 }
