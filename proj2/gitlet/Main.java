@@ -92,7 +92,31 @@ public class Main {
                     Repository.status();
                     break;
                 case "checkout" :
-                    
+                    check(args.length,2,3,4);
+                    if(args.length == 3) {
+                        Repository.checkout(args[2]);
+                    }
+                    if(args.length == 4) {
+                        Repository.checkout(args[3],args[1]);
+                    }
+                    if(args.length == 2 ) {
+                        Repository.checkout_branch(args[1]);
+                    }
+                    break;
+                case "branch" :
+                    check(args.length,2);
+                    if(!Repository.createnewbranch(args[1])) {
+                        throw Utils.error("A branch with that name already exists.");
+                    }
+                    break;
+                case "rm-branch" :
+                    check(args.length,2) ;
+                    Repository.remove_branch(args[1]);
+                    break;
+                case "reset" :
+                    break;
+                case "merge" :
+                    break;
                 default:
                     throw new GitletException("No command with that name exists.");
             }
