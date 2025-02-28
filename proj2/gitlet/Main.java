@@ -4,6 +4,7 @@ import jdk.jshell.execution.Util;
 
 import java.io.File;
 import java.net.URI;
+import java.util.Objects;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author TODO
@@ -57,7 +58,7 @@ public class Main {
                     if(!Repository.exists()) {
                         throw Utils.error("Not in an initialized Gitlet directory.");
                     }
-                    if(args.length == 1) {
+                    if(args.length == 1 || Objects.equals(args[1], "")) {
                         throw Utils.error("Please enter a commit message.");
                     }
                     if(args.length > 2) {
@@ -83,7 +84,7 @@ public class Main {
                     break;
                 case "find" :
                     check(args.length,2);
-                    if(Repository.find(args[1])) {
+                    if(!Repository.find(args[1])) {
                         throw Utils.error("Found no commit with that message.");
                     }
                     break;
@@ -94,9 +95,15 @@ public class Main {
                 case "checkout" :
                     check(args.length,2,3,4);
                     if(args.length == 3) {
+                        if(!Objects.equals(args[1], "--")) {
+                            throw Utils.error("Incorrect operands.");
+                        }
                         Repository.checkout(args[2]);
                     }
                     if(args.length == 4) {
+                        if(!Objects.equals(args[2], "--")) {
+                            throw Utils.error("Incorrect operands.");
+                        }
                         Repository.checkout(args[3],args[1]);
                     }
                     if(args.length == 2 ) {

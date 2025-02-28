@@ -62,12 +62,13 @@ public class Repository {
         return COMMIT_FILE;
     }
     private static Commit current_Commit(String id) {
+        if(Objects.equals(id, "") || id == null) return null;
         File Lst_commit_file = join(COMMITS_DIR,id);
         if(!Lst_commit_file.exists()) return null;
         return readObject(Lst_commit_file,Commit.class);
     }
     private static Commit get_lst_Commit(Commit now) {
-        if(now.getlst() == "") return null;
+        if(Objects.equals(now.getlst(), "")) return null;
         return current_Commit(now.getlst());
     }
     private static void createnewfile(File... files) {
@@ -94,7 +95,7 @@ public class Repository {
         COMMITS_DIR.mkdir();
         BLOBS_DIR.mkdir();
         createnewfile(Branches_FILE,HEAD_FILE,Tracked_FILE,Removed_FILE);
-        HEAD = "MASTER";
+        HEAD = "master";
         Commit fir_commit = new Commit("initial commit", time(0),new HashMap<>(),"");
         branches.put(HEAD,fir_commit.getHash());
         writeall();
@@ -114,16 +115,15 @@ public class Repository {
         }
         Commit lst_commit = current_Commit(lst);
         Map<String,String > lst_tracked = new HashMap<>(lst_commit.getFiles());
-        for(String key : lst_tracked.keySet()) {
+        Map<String,String> llst_tracked = new HashMap<>(lst_tracked);
+        for(String key : llst_tracked.keySet()) {
             if(removed.containsKey(key)) {
                 lst_tracked.remove(key);
             }
         }
         Map<String,String> res = new HashMap<>(lst_tracked);
-        for(String key : lst_tracked.keySet()) {
-            if(tracked.containsKey(key)) {
-                res.put(key,tracked.get(key));
-            }
+        for(String key : tracked.keySet()) {
+            res.put(key,tracked.get(key));
         }
         removed.clear();
         tracked.clear();
@@ -133,14 +133,24 @@ public class Repository {
     public static boolean add (String file_to_add) {
         File ADD_FILE = join(CWD,file_to_add);
         if(!ADD_FILE.exists()) return false;
-        tracked = readObject(Tracked_FILE,HashMap.class);
+        readall();
         String hash_val = sha1(readContents(ADD_FILE));
-        tracked.put(file_to_add,hash_val);
-        //store the contents of file
-        File NewBlob = join(BLOBS_DIR,hash_val);
-        createnewfile(NewBlob);
-        writeContents(NewBlob,readContentsAsString(ADD_FILE));
-        writeObject(Tracked_FILE,(Serializable) tracked);
+        Commit now_commit = current_Commit(branches.get(HEAD));
+        if(now_commit.getFiles().containsKey(file_to_add) && Objects.equals(now_commit.getFiles().get(file_to_add), hash_val)) {
+            if(tracked.containsKey(file_to_add)) {
+                tracked.remove(file_to_add);
+            }
+        } else {
+            tracked.put(file_to_add, hash_val);
+            //store the contents of file
+            File NewBlob = join(BLOBS_DIR, hash_val);
+            createnewfile(NewBlob);
+            writeContents(NewBlob, readContentsAsString(ADD_FILE));
+        }
+        if(removed.containsKey(file_to_add)) {
+            removed.remove(file_to_add);
+        }
+        writeall();
         return true;
     }
     public static boolean make_commit(String messege) {
@@ -153,6 +163,9 @@ public class Repository {
         Commit now = commit(messege,time(1),lst);
         readall();
         branches.put(HEAD , now.getHash() ) ;
+        File now_commit_file = join(COMMITS_DIR, now.getHash());
+        createnewfile(now_commit_file);
+        writeObject(now_commit_file,now);
         writeall();
         return true;
     }
@@ -162,9 +175,13 @@ public class Repository {
         // get last commit
         Commit lst_commit = current_Commit(branches.get(HEAD));
         if(removed.containsKey(file_to_remove)) return false;
-        else if(!tracked.containsKey(file_to_remove) || !lst_commit.getFiles().containsKey(file_to_remove)) return false;
-        removed.put(file_to_remove,"");
-        restrictedDelete(file_to_remove);
+        else if(!tracked.containsKey(file_to_remove) && !lst_commit.getFiles().containsKey(file_to_remove)) return false;
+        if(tracked.containsKey(file_to_remove)) {
+            tracked.remove(file_to_remove);
+        }else {
+            removed.put(file_to_remove, "");
+            restrictedDelete(file_to_remove);
+        }
         writeall();
         return true;
     }
@@ -175,6 +192,7 @@ public class Repository {
         while(now!=null) {
             now.printMessege();
             now = get_lst_Commit(now);
+            System.out.println();
         }
         writeall();
     }
@@ -183,6 +201,7 @@ public class Repository {
         for(String commit_file : all_commit_file) {
             Commit now = current_Commit(commit_file);
             now.printMessege();
+            System.out.println();
         }
     }
     public static boolean find(String message) {
@@ -190,7 +209,7 @@ public class Repository {
         List<String> all_commit_file = plainFilenamesIn(COMMITS_DIR);
         for(String commit_file : all_commit_file) {
             Commit now = current_Commit(commit_file);
-            if(now.getMessage() == message) {
+            if(Objects.equals(now.getMessage(), message)) {
                 System.out.println(now.getHash());
                 flag = true;
             }
@@ -201,8 +220,10 @@ public class Repository {
         readall();
         //  branches
         System.out.println("=== Braches ===");
-        for(String key : branches.keySet()) {
-            if(key == HEAD) {
+        List<String> keys = new ArrayList<>(branches.keySet());
+        Collections.sort(keys);
+        for(String key : keys) {
+            if(Objects.equals(key, HEAD)) {
                 System.out.println("*"+HEAD);
             }else {
                 System.out.println(key);
@@ -211,7 +232,9 @@ public class Repository {
         System.out.println();
         // staged files
         System.out.println("=== Staged Files ===");
-        for(String key : tracked.keySet()) {
+        keys = new ArrayList<>(tracked.keySet());
+        Collections.sort(keys);
+        for(String key : keys) {
             if(!removed.containsKey(key)) {
                 System.out.println(key);
             }
@@ -219,16 +242,24 @@ public class Repository {
         System.out.println();
         // removed files
         System.out.println("=== Removed Files ===");
+        keys = new ArrayList<>(removed.keySet());
+        Collections.sort(keys);
         for(String key : removed.keySet()) {
             System.out.println(key);
         }
+        System.out.println();
+        //
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println();
+        //
+        System.out.println("=== Untracked Files ===");
         System.out.println();
         //
         writeall();
     }
     public static void checkout(String file_name) {
         readall();
-        String lst = HEAD;
+        String lst = branches.get(HEAD);
         writeall();
         checkout(file_name,lst);
     }
@@ -283,7 +314,7 @@ public class Repository {
         writeall();
     }
     public static boolean createnewbranch (String branch_name) {
-        //create a new branch but dont switch the HEAD instantly
+        //create a new branch but don't switch the HEAD instantly
         readall();
         if(branches.containsKey(branch_name)) return false;
         branches.put(branch_name,branches.get(HEAD));
@@ -292,13 +323,14 @@ public class Repository {
     }
     public static void remove_branch (String branch_name) {
         readall();
-        if(branch_name == HEAD) {
+        if(Objects.equals(branch_name, HEAD)) {
             throw error("Cannot remove the current branch.");
         }
         if(!branches.containsKey(branch_name)) {
             throw error("A branch with that name does not exist.");
         }
         branches.remove(branch_name);
+        writeall();
     }
     public static void reset(String commit_id) {
         readall();
@@ -312,7 +344,7 @@ public class Repository {
         keys.addAll(check.getFiles().keySet());
         for(String key:keys) {
             if(now.getFiles().containsKey(key) && check.getFiles().containsKey(key)) {
-                if(now.getFiles().get(key) != check.getFiles().get(key)) {
+                if(!Objects.equals(now.getFiles().get(key), check.getFiles().get(key))) {
                     writeContents(join(CWD,key),readContentsAsString(join(BLOBS_DIR,check.getFiles().get(key))));
                 }
             } else if(now.getFiles().containsKey(key)) {
