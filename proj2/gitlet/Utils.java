@@ -124,6 +124,7 @@ class Utils {
             BufferedOutputStream str =
                 new BufferedOutputStream(Files.newOutputStream(file.toPath()));
             for (Object obj : contents) {
+                if(obj == null ) continue;
                 if (obj instanceof byte[]) {
                     str.write((byte[]) obj);
                 } else {

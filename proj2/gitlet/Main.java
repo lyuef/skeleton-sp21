@@ -121,8 +121,12 @@ public class Main {
                     Repository.remove_branch(args[1]);
                     break;
                 case "reset" :
+                    check(args.length,2);
+                    Repository.reset(args[1]);
                     break;
                 case "merge" :
+                    check(args.length,2) ;
+                    Repository.merge(args[1]);
                     break;
                 default:
                     throw new GitletException("No command with that name exists.");

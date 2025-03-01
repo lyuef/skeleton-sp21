@@ -82,12 +82,25 @@ public class Repository {
     }
     private static String get_abbre_commit_id(String commit_id) {
         List<String> all_commit_file = plainFilenamesIn(COMMITS_DIR);
-        for(String commit_file : all_commit_file) {
-            if(commit_file.startsWith(commit_id)) {
-                return commit_file;
+        if (all_commit_file != null) {
+            for(String commit_file : all_commit_file) {
+                Commit now = current_Commit(commit_file);
+                //System.err.println(now.getHash());
+                if(now.getHash().startsWith(commit_id)) {
+                    return now.getHash();
+                }
             }
         }
         return null;
+    }
+    private static void check_untracked(File f) {
+        if(f.exists()) {
+            throw error("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+    }
+    private static void conflict(String head,String merge_in,File target_file,String file_name) {
+        writeContents(target_file,"<<<<<<< HEAD\n",head==null?null:readContentsAsString(join(BLOBS_DIR,head)),"=======\n",merge_in==null?null:readContentsAsString(join(BLOBS_DIR,merge_in)),">>>>>>>");
+        add(file_name);
     }
     public static boolean init() {
         if(GITLET_DIR.exists()) return false;
@@ -136,6 +149,7 @@ public class Repository {
         readall();
         String hash_val = sha1(readContents(ADD_FILE));
         Commit now_commit = current_Commit(branches.get(HEAD));
+        //if(Objects.equals(file_to_add, "m.txt"))System.err.println(now_commit.getHash());
         if(now_commit.getFiles().containsKey(file_to_add) && Objects.equals(now_commit.getFiles().get(file_to_add), hash_val)) {
             if(tracked.containsKey(file_to_add)) {
                 tracked.remove(file_to_add);
@@ -151,6 +165,7 @@ public class Repository {
             removed.remove(file_to_add);
         }
         writeall();
+        //if(Objects.equals(file_to_add, "m.txt")) log();
         return true;
     }
     public static boolean make_commit(String messege) {
@@ -167,10 +182,15 @@ public class Repository {
         createnewfile(now_commit_file);
         writeObject(now_commit_file,now);
         writeall();
+//        if (Objects.equals(messege, "Add h.txt and remove g.txt")) {
+//            System.err.println(now.getHash());
+//            System.err.println(now_commit_file.toPath());
+//            log();
+//        }
         return true;
     }
     public static boolean rm (String file_to_remove) {
-        //core : check if the file has been removed
+        // core : check if the file has been removed
         readall();
         // get last commit
         Commit lst_commit = current_Commit(branches.get(HEAD));
@@ -219,7 +239,7 @@ public class Repository {
     public static void status () {
         readall();
         //  branches
-        System.out.println("=== Braches ===");
+        System.out.println("=== Branches ===");
         List<String> keys = new ArrayList<>(branches.keySet());
         Collections.sort(keys);
         for(String key : keys) {
@@ -293,17 +313,19 @@ public class Repository {
         Set<String> keys = new HashSet<>(now.getFiles().keySet());
         keys.addAll(check.getFiles().keySet());
         for(String key:keys) {
+            if(!now.getFiles().containsKey(key) && check.getFiles().containsKey(key)) {
+                check_untracked(join(CWD,key));
+            }
+        }
+        for(String key:keys) {
             if(now.getFiles().containsKey(key) && check.getFiles().containsKey(key)) {
-                if(now.getFiles().get(key) != check.getFiles().get(key)) {
+                if(!Objects.equals(now.getFiles().get(key), check.getFiles().get(key))) {
                     writeContents(join(CWD,key),readContentsAsString(join(BLOBS_DIR,check.getFiles().get(key))));
                 }
             } else if(now.getFiles().containsKey(key)) {
                 restrictedDelete(key);
             }else {
                 File now_file = join(CWD,key);
-                if(now_file.exists()) {
-                    throw error("There is an untracked file in the way; delete it, or add and commit it first.");
-                }
                 createnewfile(now_file);
                 writeContents(now_file,readContentsAsString(join(BLOBS_DIR,check.getFiles().get(key))));
             }
@@ -312,6 +334,7 @@ public class Repository {
         removed.clear();
         HEAD = branch;
         writeall();
+        //if(Objects.equals(branch, "other")) global_log();
     }
     public static boolean createnewbranch (String branch_name) {
         //create a new branch but don't switch the HEAD instantly
@@ -334,14 +357,22 @@ public class Repository {
     }
     public static void reset(String commit_id) {
         readall();
+        //System.err.println(commit_id);
         commit_id = get_abbre_commit_id(commit_id);
+        //System.err.println(commit_id);
         Commit now = current_Commit(branches.get(HEAD));
         Commit check = current_Commit(commit_id);
+        //System.err.println(check);
         if(check == null ) {
             throw error("No commit with that id exists.");
         }
         Set<String> keys = new HashSet<>(now.getFiles().keySet());
         keys.addAll(check.getFiles().keySet());
+        for(String key:keys) {
+            if(!now.getFiles().containsKey(key) && check.getFiles().containsKey(key)) {
+                check_untracked(join(CWD,key));
+            }
+        }
         for(String key:keys) {
             if(now.getFiles().containsKey(key) && check.getFiles().containsKey(key)) {
                 if(!Objects.equals(now.getFiles().get(key), check.getFiles().get(key))) {
@@ -351,9 +382,6 @@ public class Repository {
                 restrictedDelete(key);
             }else {
                 File now_file = join(CWD,key);
-                if(now_file.exists()) {
-                    throw error("There is an untracked file in the way; delete it, or add and commit it first.");
-                }
                 createnewfile(now_file);
                 writeContents(now_file,readContentsAsString(join(BLOBS_DIR,check.getFiles().get(key))));
             }
@@ -363,5 +391,107 @@ public class Repository {
         branches.put(HEAD,commit_id);
         writeall();
     }
-
+    public static void merge(String branch_name) {
+        readall();
+        //check failed cases
+        if(!tracked.isEmpty() || !removed.isEmpty()) {
+            throw error("You have uncommitted changes.");
+        }
+        if(!branches.containsKey(branch_name)) {
+            throw error("A branch with that name does not exist.");
+        }
+        if(Objects.equals(branch_name, HEAD)) {
+            throw error("Cannot merge a branch with itself.");
+        }
+        //find lca
+        Commit lca = current_Commit(branches.get(HEAD));
+        Set<String>path = new HashSet<>();
+        while(lca!=null) {
+            path.add(lca.getHash());
+            lca = get_lst_Commit(lca);
+        }
+        lca = current_Commit(branches.get(branch_name));
+        while(lca!=null) {
+            if(path.contains(lca.getHash())) break;
+            lca = get_lst_Commit(lca);
+        }
+        //two special cases
+        if(Objects.equals(lca.getHash(), branches.get(branch_name))) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            return ;
+        } else if(Objects.equals(lca.getHash(), branches.get(HEAD))) {
+            System.out.println("Current branch fast-forwarded.");
+            checkout_branch(branch_name);
+            return ;
+        }
+        //8 cases then
+        Set<String> keys = new HashSet<>(lca.getFiles().keySet());
+        Map<String,String>head_map = new HashMap<>(current_Commit(branches.get(HEAD)).getFiles());
+        Map<String,String>add_map = new HashMap<>(current_Commit(branches.get(branch_name)).getFiles());
+        keys.addAll(head_map.keySet());
+        keys.addAll(add_map.keySet());
+        //check untracked files first !!!
+        for(String key : keys) {
+                if(!lca.getFiles().containsKey(key) && !head_map.containsKey(key) && add_map.containsKey(key)) {
+                    check_untracked(join(CWD,key));
+                }
+        }
+        boolean have_conflicts = false;
+        for(String key : keys) {
+            if(lca.getFiles().containsKey(key)) {
+                if (head_map.containsKey(key) && add_map.containsKey(key)) {
+                    if(Objects.equals(head_map.get(key), lca.getFiles().get(key)))  {
+                        if(!Objects.equals(head_map.get(key), add_map.get(key))) {
+                            writeContents(join(CWD,key),readContentsAsString(join(BLOBS_DIR, add_map.get(key))));
+                            add(key);
+                        }
+                    } else {
+                        if(!Objects.equals(head_map.get(key), add_map.get(key)) ) {
+                            if(!Objects.equals(add_map.get(key),lca.getFiles().get(key)) ){
+                                conflict(head_map.get(key),add_map.get(key),join(CWD,key),key);
+                                have_conflicts = true;
+                            }
+                        }
+                    }
+                } else if (head_map.containsKey(key) && !add_map.containsKey(key)) {
+                    if(!Objects.equals(head_map.get(key), lca.getFiles().get(key))) {
+                        conflict(head_map.get(key),null,join(CWD,key),key);
+                        have_conflicts = true;
+                    } else {
+                        restrictedDelete(join(CWD,key));
+                        removed.put(key,"");
+                    }
+                } else if (!head_map.containsKey(key) && add_map.containsKey(key)) {
+                    if (! Objects.equals(add_map.get(key), lca.getFiles().get(key))) {
+                        conflict(null, add_map.get(key),join(CWD, key),key);
+                        have_conflicts = true;
+                    }
+                }
+            }else {
+                if(head_map.containsKey(key) && add_map.containsKey(key)) {
+                    if(!Objects.equals(head_map.get(key), add_map.get(key))) {
+                        conflict(head_map.get(key),add_map.get(key),join(CWD,key),key);
+                        have_conflicts = true;
+                    }
+                } else if(add_map.containsKey(key)) {
+                    File add = join(CWD,key);
+                    //check_untracked(add);
+                    createnewfile(add);
+                    writeContents(add,readContentsAsString(join(BLOBS_DIR, add_map.get(key))));
+                    tracked.put(key, add_map.get(key));
+                }
+            }
+        }
+        if(have_conflicts) {
+            System.out.println("Encountered a merge conflict.");
+        }
+        writeall();
+        make_commit(String.format("Merged %s into %s.",branch_name,HEAD));
+        readall();
+        String bef = branches.get(HEAD);
+        Commit merge_commit = current_Commit(bef);
+        merge_commit.add_merge_info(String.format("Merge: %s %s",get_lst_Commit(merge_commit).getHash().substring(0,7),current_Commit(branches.get(branch_name)).getHash().substring(0,7)));
+        writeObject(join(COMMITS_DIR,bef),merge_commit);
+        writeall();
+    }
 }

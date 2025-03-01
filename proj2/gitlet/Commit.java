@@ -28,15 +28,18 @@ public class Commit implements Serializable {
     private final String message;
     private Map<String,String> files ;
     private final String timestamp;
+    private String  merge_message = null;
+    private String hash_val = null;
     Commit(String _message , String  _timestamp , Map<String,String>_files,String _lst) {
         message = _message;
         timestamp = _timestamp;
         files = new HashMap<>(_files);
         lst = _lst;
+        hash_val = Utils.sha1(message,timestamp,lst,files.toString());
     }
     /* TODO: fill in the rest of this class. */
     public String getHash() {
-        return Utils.sha1(message,timestamp,lst,files.toString());
+        return hash_val;
     }
     public  String getMessage() {
         return message;
@@ -55,7 +58,13 @@ public class Commit implements Serializable {
         System.out.println("===");
         //TODO : add merge info
         System.out.println("commit " + getHash());
+        if(merge_message != null) {
+            System.out.println(merge_message);
+        }
         System.out.println("Date: " + getTimestamp());
         System.out.println(getMessage());
+    }
+    public void add_merge_info(String s) {
+        merge_message = s;
     }
 }
