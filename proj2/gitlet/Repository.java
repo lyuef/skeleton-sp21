@@ -99,7 +99,7 @@ public class Repository {
         }
     }
     private static void conflict(String head,String merge_in,File target_file,String file_name) {
-        writeContents(target_file,"<<<<<<< HEAD\n",head==null?null:readContentsAsString(join(BLOBS_DIR,head)),"=======\n",merge_in==null?null:readContentsAsString(join(BLOBS_DIR,merge_in)),">>>>>>>");
+        writeContents(target_file,"<<<<<<< HEAD\n",head==null?null:readContentsAsString(join(BLOBS_DIR,head)),"=======\n",merge_in==null?null:readContentsAsString(join(BLOBS_DIR,merge_in)),">>>>>>>\n");
         add(file_name);
     }
     public static boolean init() {
