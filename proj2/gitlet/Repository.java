@@ -68,8 +68,8 @@ public class Repository {
         return readObject(Lst_commit_file,Commit.class);
     }
     private static Commit get_lst_Commit(Commit now) {
-        if(Objects.equals(now.getlst(), "")) return null;
-        return current_Commit(now.getlst());
+        if(Objects.equals(now.getlst().getFirst(), "")) return null;
+        return current_Commit(now.getlst().getFirst());
     }
     private static void createnewfile(File... files) {
         for(File file : files) {
@@ -118,7 +118,7 @@ public class Repository {
     public static boolean exists() {
         return GITLET_DIR.exists();
     }
-    public static Commit commit(String message,String timestamp,String lst) {
+    public static Commit commit(String message,String timestamp,String... lst) {
         //core part is handle the addstage and removestage
         readall();
         for(String key : tracked.keySet()) {
@@ -126,7 +126,7 @@ public class Repository {
                 tracked.remove(key);
             }
         }
-        Commit lst_commit = current_Commit(lst);
+        Commit lst_commit = current_Commit(lst[0]);
         Map<String,String > lst_tracked = new HashMap<>(lst_commit.getFiles());
         Map<String,String> llst_tracked = new HashMap<>(lst_tracked);
         for(String key : llst_tracked.keySet()) {
@@ -168,14 +168,17 @@ public class Repository {
         //if(Objects.equals(file_to_add, "m.txt")) log();
         return true;
     }
-    public static boolean make_commit(String messege) {
+    public static boolean make_commit(String messege,String... lsts) {
         //core : handle the logic of nothing changed and moved the HEAD point
         readall();
         if(tracked.isEmpty()  && removed.isEmpty()) return false;
         //move HEAD pointer
         String lst = new String(branches.get(HEAD));
         writeall();
-        Commit now = commit(messege,time(1),lst);
+        String[] newLsts = new String[lsts.length + 1];
+        newLsts[0] = lst;
+        System.arraycopy(lsts, 0, newLsts, 1, lsts.length);
+        Commit now = commit(messege,time(1), newLsts);
         readall();
         branches.put(HEAD , now.getHash() ) ;
         File now_commit_file = join(COMMITS_DIR, now.getHash());
@@ -406,15 +409,26 @@ public class Repository {
         //find lca
         Commit lca = current_Commit(branches.get(HEAD));
         Set<String>path = new HashSet<>();
-        while(lca!=null) {
-            path.add(lca.getHash());
-            lca = get_lst_Commit(lca);
+        ArrayList<Commit> stk = new ArrayList<>();
+        stk.add(lca);
+        //if(Objects.equals(branch_name, "B2")) global_log();
+        while(!stk.isEmpty()) {
+            Commit now = stk.getLast();stk.removeLast();
+            if(now == null || path.contains(now.getHash())) continue;
+            path.add(now.getHash());
+            //if(Objects.equals(branch_name, "B2")) System.err.println(now.getMessage());
+            ArrayList<String>lsts = new ArrayList<>(now.getlst());
+            for(String lst:lsts) {
+                //if(Objects.equals(branch_name, "B2") && !Objects.equals(lst, "")) System.err.println("*"+ current_Commit(lst).getMessage());
+                stk.add(current_Commit(lst));
+            }
         }
         lca = current_Commit(branches.get(branch_name));
         while(lca!=null) {
             if(path.contains(lca.getHash())) break;
             lca = get_lst_Commit(lca);
         }
+        //if(Objects.equals(branch_name, "B2")) System.err.println(lca.getMessage());
         //two special cases
         if(Objects.equals(lca.getHash(), branches.get(branch_name))) {
             System.out.println("Given branch is an ancestor of the current branch.");
@@ -486,7 +500,7 @@ public class Repository {
             System.out.println("Encountered a merge conflict.");
         }
         writeall();
-        make_commit(String.format("Merged %s into %s.",branch_name,HEAD));
+        make_commit(String.format("Merged %s into %s.",branch_name,HEAD),branches.get(branch_name));
         readall();
         String bef = branches.get(HEAD);
         Commit merge_commit = current_Commit(bef);

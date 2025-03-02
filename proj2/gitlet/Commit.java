@@ -3,10 +3,7 @@ package gitlet;
 // TODO: any imports you need here
 
 import java.io.Serializable;
-import java.util.Date; // TODO: You'll likely use this in this class
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SimpleTimeZone;
+import java.util.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -24,18 +21,20 @@ public class Commit implements Serializable {
      */
 
     /** The message of this Commit. */
-    private String lst;
+    private ArrayList<String>lst =new ArrayList<>();
     private final String message;
     private Map<String,String> files ;
     private final String timestamp;
     private String  merge_message = null;
     private String hash_val = null;
-    Commit(String _message , String  _timestamp , Map<String,String>_files,String _lst) {
+    Commit(String _message , String  _timestamp , Map<String,String>_files,String... _lsts) {
         message = _message;
         timestamp = _timestamp;
         files = new HashMap<>(_files);
-        lst = _lst;
-        hash_val = Utils.sha1(message,timestamp,lst,files.toString());
+        for(String _lst:_lsts) {
+            lst.add(_lst);
+        }
+        hash_val = Utils.sha1(message,timestamp,lst.toString(),files.toString());
     }
     /* TODO: fill in the rest of this class. */
     public String getHash() {
@@ -51,7 +50,7 @@ public class Commit implements Serializable {
     public Map<String,String> getFiles() {
         return files;
     }
-    public String getlst() {
+    public ArrayList<String> getlst() {
         return lst;
     }
     public void printMessege() {
