@@ -68,8 +68,8 @@ public class Repository {
         return readObject(Lst_commit_file,Commit.class);
     }
     private static Commit get_lst_Commit(Commit now) {
-        if(Objects.equals(now.getlst().getFirst(), "")) return null;
-        return current_Commit(now.getlst().getFirst());
+        if(Objects.equals(now.getlst().get(0), "")) return null;
+        return current_Commit(now.getlst().get(0));
     }
     private static void createnewfile(File... files) {
         for(File file : files) {
@@ -409,18 +409,18 @@ public class Repository {
         //find lca
         Commit lca = current_Commit(branches.get(HEAD));
         Set<String>path = new HashSet<>();
-        ArrayList<Commit> stk = new ArrayList<>();
-        stk.add(lca);
+        Stack<Commit> stk = new Stack<>();
+        stk.push(lca);
         //if(Objects.equals(branch_name, "B2")) global_log();
         while(!stk.isEmpty()) {
-            Commit now = stk.getLast();stk.removeLast();
+            Commit now = stk.peek();stk.pop();
             if(now == null || path.contains(now.getHash())) continue;
             path.add(now.getHash());
             //if(Objects.equals(branch_name, "B2")) System.err.println(now.getMessage());
             ArrayList<String>lsts = new ArrayList<>(now.getlst());
             for(String lst:lsts) {
                 //if(Objects.equals(branch_name, "B2") && !Objects.equals(lst, "")) System.err.println("*"+ current_Commit(lst).getMessage());
-                stk.add(current_Commit(lst));
+                stk.push(current_Commit(lst));
             }
         }
         lca = current_Commit(branches.get(branch_name));
